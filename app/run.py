@@ -17,7 +17,15 @@ from sklearn.base import BaseEstimator, TransformerMixin
 app = Flask(__name__)
 
 class StartingVerbExtractor(BaseEstimator, TransformerMixin):
-
+    """
+    Starting Verb Extractor class
+    
+    This class extract the starting verb of a sentence, aim to creat a new feature for the ML classifier
+    Parameters:
+        text -> list of tokenized text messages
+    Output:
+        pd.DataFrame(X_tagged)-> a dataframe with the starting verb of a sentence
+    """
     def starting_verb(self, text):
         sentence_list = nltk.sent_tokenize(text)
         for sentence in sentence_list:
@@ -34,6 +42,21 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         X_tagged = pd.Series(X).apply(self.starting_verb)
         return pd.DataFrame(X_tagged)
 def f1_score_single(y_true, y_pred):
+    """
+    F1_score_single function
+    
+    This is a performance scoring I created to deal with the multi-label and multi-class problems.
+    
+    It can be used as scorer for GridSearchCV:
+        scorer = make_scorer(multioutput_fscore,beta=1)
+        
+    Parameters:
+        y_true -> labels
+        y_prod -> predictions
+    
+    Output:
+        2 * p * r / (p + r)-> customized f1 score for one single data
+    """      
     y_true = set(y_true)
     y_pred = set(y_pred)
     cross_size = len(y_true & y_pred)
@@ -43,9 +66,28 @@ def f1_score_single(y_true, y_pred):
     return 2 * p * r / (p + r)
     
 def f1_score(y_true, y_pred):
+    """
+    F1_score function  
+    It is a sort of arithmetic mean of all the f1_score, computed on each label.
+
+    Parameters:
+        y_true -> labels
+        y_prod -> predictions
+
+    Output:
+        np.mean([f1_score_single(x, y) for x, y in zip(y_true, y_pred)]) -> arithmetic mean of all the f1_score
+    """       
     return np.mean([f1_score_single(x, y) for x, y in zip(y_true, y_pred)])
 
 def tokenize(text):
+    """
+    Tokenize function
+    This function is to process your text data
+    Parameters:
+        text -> list of text messages
+    Output:
+        clean_tokens -> tokenized text: separated words without upper case
+    """     
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -62,7 +104,6 @@ df = pd.read_sql_table('df', engine)
 # load model
 model = joblib.load("../models/classifier.pkl")
 
-
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
@@ -72,6 +113,9 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    # make a distribution plot on the categories data     
+    category_names = df.iloc[:,4:].columns
+    category_counts = (df.iloc[:,4:]).sum().values
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -93,9 +137,27 @@ def index():
                     'title': "Genre"
                 }
             }
+        },
+    # plot for the distribution of categories
+        {
+            'data': [
+                Bar(
+                    x=category_names,
+                    y=category_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of Categories',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Categories"
+                }
+            }
         }
     ]
-    
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
