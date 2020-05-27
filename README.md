@@ -58,7 +58,10 @@ https://github.com/jichaojoyce/Disaster-classsifier-.git
 3. Go to http://0.0.0.0:3001/
 
 ### Data distribution:
+The below figure is the distribution of message genres
 ![dis Pic](over.png)
+The below figure is the distribution of categories
+![dis Pic](categories.png)
 <a name="authors"></a>
 ## Authors
 
